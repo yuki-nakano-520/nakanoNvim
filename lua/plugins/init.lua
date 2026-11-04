@@ -220,6 +220,85 @@ local plugins = {
 			end)
 		end,
 	},
+
+	-- ==============================================
+	-- mason-tool-installer
+	-- Java開発に必要なツールをMason経由で自動インストールする
+	-- jdtls             : Java Language Server本体（補完・定義ジャンプなど）
+	-- java-debug-adapter: デバッガー（DAP）機能を提供
+	-- java-test         : テストの実行機能を提供
+	-- ==============================================
+	{
+		"WhoIsSethDaniel/mason-tool-installer.nvim",
+		dependencies = { "williamboman/mason.nvim" },
+		config = function()
+			require("mason-tool-installer").setup({
+				ensure_installed = {
+					"jdtls",
+					"java-debug-adapter",
+					"java-test",
+				},
+			})
+		end,
+	},
+
+	-- ==============================================
+	-- nvim-dap（デバッガー本体）
+	-- VSCodeのデバッグ機能（ブレークポイント・ステップ実行）に相当する
+	-- ==============================================
+	{
+		"mfussenegger/nvim-dap",
+	},
+
+	-- ==============================================
+	-- nvim-dap-ui（デバッガーのUI）
+	-- 変数の中身・スタックトレース・ブレークポイント一覧を画面に表示する
+	-- ==============================================
+	{
+		"rcarriga/nvim-dap-ui",
+		dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
+		config = function()
+			local dap = require("dap")
+			local dapui = require("dapui")
+
+			dapui.setup()
+
+			-- デバッグ開始時に自動でUIを開く
+			dap.listeners.after.event_initialized["dapui_config"] = function()
+				dapui.open()
+			end
+			-- デバッグ終了時に自動でUIを閉じる
+			dap.listeners.before.event_terminated["dapui_config"] = function()
+				dapui.close()
+			end
+			dap.listeners.before.event_exited["dapui_config"] = function()
+				dapui.close()
+			end
+
+			-- ==============================================
+			-- デバッグ用キーマップ（VSCodeと同じF5系キー）
+			-- ==============================================
+			local map = vim.keymap.set
+			map("n", "<F5>", dap.continue, { desc = "デバッグ開始/続行" })
+			map("n", "<F10>", dap.step_over, { desc = "ステップオーバー" })
+			map("n", "<F11>", dap.step_into, { desc = "ステップイン" })
+			map("n", "<F12>", dap.step_out, { desc = "ステップアウト" })
+			map("n", "<leader>b", dap.toggle_breakpoint, { desc = "ブレークポイント切替" })
+			map("n", "<leader>du", dapui.toggle, { desc = "デバッグUIを開閉" })
+		end,
+	},
+
+	-- ==============================================
+	-- nvim-jdtls
+	-- Java専用のLSP+DAP連携プラグイン
+	-- 補完・定義ジャンプ・エラー表示・デバッグをまとめて提供する
+	-- 実際の起動設定は ftplugin/java.lua で行う
+	-- （.javaファイルを開いたときにNeovimが自動でそのファイルを読み込む）
+	-- ==============================================
+	{
+		"mfussenegger/nvim-jdtls",
+		ft = "java",
+	},
 }
 -- lazy.nvim を起動する
 require("lazy").setup(plugins)
